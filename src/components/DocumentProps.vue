@@ -11,7 +11,7 @@ interface Props {
 }
 
 const props = defineProps<Props>()
-const emit = defineEmits(['getName'])
+const emit = defineEmits(['getName', 'error'])
 const { attrDescription } = storeToRefs(useGlobalStore())
 
 const useFetch = () => {
@@ -30,6 +30,7 @@ const useFetch = () => {
       }
       loading.value = false
     } catch (e) {
+      emit('error', e)
       error.value = e
     }
   }
