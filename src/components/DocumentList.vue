@@ -10,20 +10,23 @@ import type { DocumentAttributes } from '@/api/types'
 const { attrDescription } = storeToRefs(useGlobalStore())
 
 const defaultColumns = [
-  'number',
-  'ssa_name',
-  'sdta_create_date',
-  'sdta_date_approval',
-  'ssa_category',
-  'ssa_parent_kind_name',
-  'ssa_kind_name',
-  'ssa_doc_life_cycle_value'
+  { attr: 'number', width: 70 },
+  { attr: 'ssa_name', width: 250 },
+  { attr: 'sdta_create_date', width: 160 },
+  { attr: 'sdta_date_approval', width: 160 },
+  { attr: 'ssa_category', width: 200 },
+  { attr: 'ssa_parent_kind_name', width: 200 },
+  { attr: 'ssa_kind_name', width: 200 },
+  { attr: 'ssa_doc_life_cycle_value', width: 160 }
 ]
 
 const columns = computed(() =>
   attrDescription.value ?
-    defaultColumns.map(col => {
-      return col === 'number' ? 'Номер' : attrDescription.value[col]
+    defaultColumns.map(({ attr, width }) => {
+      return ({ 
+        name: attr === 'number' ? 'Номер' : attrDescription.value[attr],
+        width
+      })
     }) :
     []
 )
@@ -46,7 +49,7 @@ const useFetchNext = () => {
     if (offset >= size) { return }
     try {
       const body = {
-        attributes: defaultColumns,
+        attributes: defaultColumns.map(({attr}) => attr),
         order: {
           attr: 'ssa_name',
           asc: true
@@ -94,13 +97,21 @@ onMounted(() => {
       v-if="columns.length && attributes.length"
       class="document-list__table"
     >
+      <colgroup>
+        <col
+          v-for="{ name, width } in columns"
+          :key="name"
+          span="1"
+          :style="{ width: `${width}px` }"
+        >
+      </colgroup>
       <tr class="document-list__row">
         <th
-          v-for="colName in columns"
-          :key="colName"
+          v-for="{ name } in columns"
+          :key="name"
           class="document-list__head"
         >
-          {{ colName }}
+          {{ name }}
         </th>
       </tr>
       <tr
@@ -110,11 +121,11 @@ onMounted(() => {
         @click="toDocument(attrs['r_object_id'] as string)"
       >
         <td
-          v-for="colName in defaultColumns"
-          :key="colName"
+          v-for="{ attr } in defaultColumns"
+          :key="attr"
           class="document-list__cell"
         >
-          {{ formatDate(colName, attrs[colName]) }}
+          {{ formatDate(attr, attrs[attr]) }}
         </td>
       </tr>
     </table>
@@ -124,11 +135,13 @@ onMounted(() => {
 
 <style lang="scss">
 .document-list {
+  line-height: 120%;
 
   &__table {
     border-collapse: collapse;
-    width: 100%;
     position: relative;
+    table-layout: fixed; 
+    width: 100%;
   }
 
   &__head {
