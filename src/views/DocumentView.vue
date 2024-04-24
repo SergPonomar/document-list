@@ -18,7 +18,7 @@ const id = getId()
 </script>
 
 <template>
-  <BackLink :title="error ? 'На главную' : ''" />
+  <BackLink :title="error ? 'На главную' : undefined" />
   <PageTitle :title="documentName" />
   <DocumentProps
     v-if="!error"

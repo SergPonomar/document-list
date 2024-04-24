@@ -1,23 +1,24 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useGlobalStore } from '@/stores/global'
 import { formatDate } from '@/utils'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useApi } from '@/api/useApi'
-import type { DocumentAttributes } from '@/api/types'
+import SortComponent from '@/components/SortComponent.vue'
+import type { DocumentAttributes, Sort } from '@/api/types'
 
 const { attrDescription } = storeToRefs(useGlobalStore())
 
 const defaultColumns = [
-  { attr: 'number', width: 70 },
-  { attr: 'ssa_name', width: 250 },
-  { attr: 'sdta_create_date', width: 160 },
-  { attr: 'sdta_date_approval', width: 160 },
-  { attr: 'ssa_category', width: 200 },
-  { attr: 'ssa_parent_kind_name', width: 200 },
-  { attr: 'ssa_kind_name', width: 200 },
-  { attr: 'ssa_doc_life_cycle_value', width: 160 }
+  { attr: 'number', width: 90 },
+  { attr: 'ssa_name', width: 270 },
+  { attr: 'sdta_create_date', width: 180 },
+  { attr: 'sdta_date_approval', width: 180 },
+  { attr: 'ssa_category', width: 220 },
+  { attr: 'ssa_parent_kind_name', width: 220 },
+  { attr: 'ssa_kind_name', width: 220 },
+  { attr: 'ssa_doc_life_cycle_value', width: 180 }
 ]
 
 const columns = computed(() =>
@@ -25,7 +26,9 @@ const columns = computed(() =>
     defaultColumns.map(({ attr, width }) => {
       return ({ 
         name: attr === 'number' ? 'Номер' : attrDescription.value[attr],
-        width
+        sortable: attr !== 'number',
+        attr,
+        width,
       })
     }) :
     []
@@ -44,16 +47,15 @@ const useFetchNext = () => {
   let offset = 0
   const attributes = ref<DocumentAttributes[]>([])
   const { getList } = useApi()
+  const { activeSort } = useSortParam()
 
   const fetchNext = async () => {
     if (offset >= size) { return }
+    const defaultSort: Sort = { attr: 'ssa_name', asc: true }
     try {
       const body = {
         attributes: defaultColumns.map(({attr}) => attr),
-        order: {
-          attr: 'ssa_name',
-          asc: true
-        },
+        order: activeSort.value || defaultSort,
         size: itemsPerLoad,
         offset
       }
@@ -68,10 +70,37 @@ const useFetchNext = () => {
     }
   }
 
-  return { fetchNext, attributes, loading, error }
+  function useSortParam () {
+    const route = useRoute()
+    const sortParam = [route.query.sort]
+      .map(pr => Array.isArray(pr) ? pr[0] : pr)
+      .map(pr => pr || '')
+      .map(pr => pr.split(/^-/).reverse())
+      .map(srt => srt[0] && defaultColumns.map(({ attr }) => attr).includes(srt[0]) ? ({
+        attr: srt[0],
+        asc: srt.length === 1
+      }) : undefined )[0]
+    const activeSort = ref(sortParam)
+
+    watch(activeSort, sort => {
+      if (sort) {
+        const { attr, asc } = sort
+        const query = JSON.parse(JSON.stringify(route.query))
+        query.sort = (asc? '-' : '') + attr
+        router.replace({ query })
+      }
+      // reset attributes
+      offset = 0
+      attributes.value = []
+    })
+
+    return { activeSort }
+  }
+
+  return { fetchNext, attributes, loading, error, activeSort }
 }
 
-const { fetchNext, attributes } = useFetchNext()
+const { fetchNext, attributes, activeSort } = useFetchNext()
 
 const anchor = ref()
 onMounted(() => {
@@ -94,7 +123,7 @@ onMounted(() => {
 <template>
   <div class="document-list">
     <table
-      v-if="columns.length && attributes.length"
+      v-if="columns.length"
       class="document-list__table"
     >
       <colgroup>
@@ -107,10 +136,18 @@ onMounted(() => {
       </colgroup>
       <tr class="document-list__row">
         <th
-          v-for="{ name } in columns"
+          v-for="{ name, attr, sortable } in columns"
           :key="name"
           class="document-list__head"
+          :class="{'document-list__head_non-sort': !sortable}"
         >
+          <SortComponent
+            v-if="sortable"
+            class="document-list__sort"
+            :active-sort="activeSort"
+            :sort-attr="attr"
+            @sort="activeSort = $event"
+          />
           {{ name }}
         </th>
       </tr>
@@ -121,7 +158,7 @@ onMounted(() => {
         @click="toDocument(attrs['r_object_id'] as string)"
       >
         <td
-          v-for="{ attr } in defaultColumns"
+          v-for="{ attr } in columns"
           :key="attr"
           class="document-list__cell"
         >
@@ -144,9 +181,16 @@ onMounted(() => {
     width: 100%;
   }
 
+  &__sort {
+    position: absolute;
+    left: 3px;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
   &__head {
     text-align: left;
-    padding: 20px 10px;
+    padding: 20px 10px 20px 26px;
     font-weight: 700;
     vertical-align: bottom;
     white-space: nowrap;
@@ -154,6 +198,15 @@ onMounted(() => {
     position: sticky;
     top: 0;
     background: #cce4ff;
+
+    &-content {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    &_non-sort {
+      padding-left: 10px;
+    }
 
     &:first-child {
       border-top-left-radius: 10px;
@@ -178,7 +231,7 @@ onMounted(() => {
   &__row {
     transition: background 0.3s ease;
 
-    &:not(:first-child) {
+    &:not(:first-of-type) {
       cursor: pointer;
 
       &:hover {
