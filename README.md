@@ -1,25 +1,40 @@
-# document-list
+# Document list
 
-## Project Setup
+#### Компоненты списка документов и свойств документа на основе:
+- фреймворк [Vue 3](https://vuejs.org/) Composition API
+- сборщик [Vite](https://vitejs.dev/)
+- [typescript](https://www.typescriptlang.org/)
+- менеджер состояния [Pinia](https://pinia.vuejs.org/)
+- препроцессор [SCSS](https://sass-lang.com/)
+- HTTP-клиент [Axios](https://axios-http.com/)
+- линтер [ESLint](https://eslint.org/)
 
-```sh
-npm install
+#### Демо:
+- [Демо приложения](https://sergponomar.github.io/document-lint/).
+
+##### Установка зависимостей
+
+```bash
+yarn
 ```
 
-### Compile and Hot-Reload for Development
+##### Сборка приложения
 
-```sh
-npm run dev
+```bash
+yarn build
+
+# Запуск приложения c помощью vite
+yarn preview
 ```
 
-### Type-Check, Compile and Minify for Production
+##### Запуск приложения в режиме разработки
 
-```sh
-npm run build
+```bash
+yarn dev
 ```
 
-### Lint with [ESLint](https://eslint.org/)
+##### Запуск статического анализа
 
-```sh
-npm run lint
+```bash
+yarn lint
 ```
