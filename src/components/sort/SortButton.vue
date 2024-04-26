@@ -8,12 +8,15 @@ interface Props {
 withDefaults(defineProps<Props>(), {
   active: false
 })
+
+defineEmits(['pressed'])
 </script>
 
 <template>
   <button
     class="sort-button"
     :class="{'sort-button_active': active }"
+    @click="$emit('pressed', active)"
   >
     <IconTriangleUp />
   </button>

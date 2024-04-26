@@ -13,8 +13,8 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits(['sort'])
 
-const onClick = (asc: boolean) => {
-  emit('sort', { attr: props.sortAttr, asc })
+const onClick = (asc: boolean, active: boolean) => {
+  emit('sort', active ? undefined : { attr: props.sortAttr, asc })
 }
 </script>
 
@@ -23,12 +23,12 @@ const onClick = (asc: boolean) => {
     <SortButton
       class="sort-component__top"
       :active="!!(activeSort && activeSort.attr === sortAttr && activeSort.asc)"
-      @click="onClick(true)"
+      @pressed="onClick(true, $event)"
     />
     <SortButton
       class="sort-component__bottom"
       :active="activeSort && activeSort.attr === sortAttr && !activeSort.asc"
-      @click="onClick(false)"
+      @pressed="onClick(false, $event)"
     />
   </div>
 </template>

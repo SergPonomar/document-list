@@ -74,12 +74,14 @@ const useFetchNext = () => {
     const activeSort = ref(sortParam)
 
     watch(activeSort, sort => {
+      const query = JSON.parse(JSON.stringify(route.query))
       if (sort) {
         const { attr, asc } = sort
-        const query = JSON.parse(JSON.stringify(route.query))
-        query.sort = (asc? '-' : '') + attr
-        router.replace({ query })
+        query.sort = (asc? '' : '-') + attr
+      } else {
+        query.sort = undefined
       }
+      router.replace({ query })
       resetAttributes()
     })
 
