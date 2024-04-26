@@ -3,17 +3,18 @@ type Sort = {
   attr: string;
   asc: Boolean;
 }
+type Filter = {
+  attr: Attribute;
+  value: string;
+  op: FilterOp;
+}
 
 type Attribute = string
 
 type ListDetails = {
   attributes: Attribute[];
   order: Sort;
-  filters?: {
-    attr: string;
-    value: string;
-    op: FilterOp;
-  }
+  filters?: Filter[];
   size?: number;
   offset?: number;
 }
@@ -39,5 +40,6 @@ export type {
   DocumentAttributes,
   ListResponse,
   AttributesDescription,
-  Sort
+  Sort,
+  Filter
 }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import SortButton from '@/components/SortButton.vue'
+import SortButton from '@/components/sort/SortButton.vue'
 import type { Sort } from '@/api/types'
 
 interface Props {

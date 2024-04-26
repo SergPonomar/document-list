@@ -1,0 +1,15 @@
+@mixin hover() {
+  transition: 0.3s color ease;
+
+  &:hover {
+    color: $accent;
+  }
+}
+
+@mixin input-style() {
+  border-radius: 3px;
+  outline: 1px solid $text-grey;
+  border: 1px solid $border;
+  background: white;
+  padding: 3px;
+}

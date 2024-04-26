@@ -1,38 +1,19 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useGlobalStore } from '@/stores/global'
+import { useFilterStore } from '@/stores/filter'
 import { formatDate } from '@/utils'
 import { useRouter, useRoute } from 'vue-router'
 import { useApi } from '@/api/useApi'
-import SortComponent from '@/components/SortComponent.vue'
+import SortComponent from '@/components/sort/SortComponent.vue'
+import AnchorComponent from '@/components/AnchorComponent.vue'
+import FilterModal from '@/components/filter/FilterModal.vue'
 import type { DocumentAttributes, Sort } from '@/api/types'
 
-const { attrDescription } = storeToRefs(useGlobalStore())
+const emit = defineEmits(['countChange'])
 
-const defaultColumns = [
-  { attr: 'number', width: 90 },
-  { attr: 'ssa_name', width: 270 },
-  { attr: 'sdta_create_date', width: 180 },
-  { attr: 'sdta_date_approval', width: 180 },
-  { attr: 'ssa_category', width: 220 },
-  { attr: 'ssa_parent_kind_name', width: 220 },
-  { attr: 'ssa_kind_name', width: 220 },
-  { attr: 'ssa_doc_life_cycle_value', width: 180 }
-]
-
-const columns = computed(() =>
-  attrDescription.value ?
-    defaultColumns.map(({ attr, width }) => {
-      return ({ 
-        name: attr === 'number' ? 'Номер' : attrDescription.value[attr],
-        sortable: attr !== 'number',
-        attr,
-        width,
-      })
-    }) :
-    []
-)
+const { columns } = storeToRefs(useGlobalStore())
 
 const router = useRouter()
 const toDocument = (documentId: string) => {
@@ -48,15 +29,17 @@ const useFetchNext = () => {
   const attributes = ref<DocumentAttributes[]>([])
   const { getList } = useApi()
   const { activeSort } = useSortParam()
+  const { selectedFilters } = useFilters()
 
   const fetchNext = async () => {
     if (offset >= size) { return }
     const defaultSort: Sort = { attr: 'ssa_name', asc: true }
     try {
       const body = {
-        attributes: defaultColumns.map(({attr}) => attr),
+        attributes: columns.value.map(({ attr }) => attr),
         order: activeSort.value || defaultSort,
         size: itemsPerLoad,
+        filters: selectedFilters.value.flat(),
         offset
       }
       loading.value = true
@@ -65,9 +48,17 @@ const useFetchNext = () => {
       size = data.size
       offset += itemsPerLoad
       loading.value = false
+      emit('countChange', size)
     } catch (e) {
       error.value = e
     }
+  }
+
+  const resetAttributes = () => {
+    offset = 0
+    size = Infinity
+    attributes.value = []
+    if (!loading.value) { resetAnchor() }
   }
 
   function useSortParam () {
@@ -76,7 +67,7 @@ const useFetchNext = () => {
       .map(pr => Array.isArray(pr) ? pr[0] : pr)
       .map(pr => pr || '')
       .map(pr => pr.split(/^-/).reverse())
-      .map(srt => srt[0] && defaultColumns.map(({ attr }) => attr).includes(srt[0]) ? ({
+      .map(srt => srt[0] && columns.value.map(({ attr }) => attr).includes(srt[0]) ? ({
         attr: srt[0],
         asc: srt.length === 1
       }) : undefined )[0]
@@ -89,35 +80,33 @@ const useFetchNext = () => {
         query.sort = (asc? '-' : '') + attr
         router.replace({ query })
       }
-      // reset attributes
-      offset = 0
-      attributes.value = []
+      resetAttributes()
     })
 
     return { activeSort }
   }
 
-  return { fetchNext, attributes, loading, error, activeSort }
+  function useFilters () {
+    const { selectedFilters, refetch } = storeToRefs(useFilterStore())
+
+    watch(refetch, rf => {
+      if (rf) {
+        resetAttributes()
+      }
+    })
+
+    return { selectedFilters }
+  }
+
+  return { fetchNext, attributes, loading, error, activeSort, resetAttributes }
 }
 
 const { fetchNext, attributes, activeSort } = useFetchNext()
 
-const anchor = ref()
-onMounted(() => {
-  const marginBottom = -window.innerHeight + 1.2 * 1080
-  const observer = new IntersectionObserver(
-    ([{ isIntersecting }], _observerElement) => {
-      if (isIntersecting) {
-        fetchNext()
-      }
-    },
-    {
-      rootMargin: `0px 0px ${marginBottom}px 0px`,
-      threshold: 0.0
-    }
-  )
-  observer.observe(anchor.value)
-})
+const resetKey = ref(1)
+const resetAnchor = () => {
+  resetKey.value++
+}
 </script>
 
 <template>
@@ -166,8 +155,12 @@ onMounted(() => {
         </td>
       </tr>
     </table>
-    <div ref="anchor" />
+    <AnchorComponent
+      :key="resetKey"
+      @fetch-next="fetchNext"
+    />
   </div>
+  <FilterModal />
 </template>
 
 <style lang="scss">
@@ -197,7 +190,7 @@ onMounted(() => {
     letter-spacing: -0.02em;
     position: sticky;
     top: 0;
-    background: #cce4ff;
+    background: $label;
 
     &-content {
       display: flex;

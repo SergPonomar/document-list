@@ -8,4 +8,26 @@ const formatDate = (attr: Attribute, value: string | number | null) => {
   return value
 }
 
-export { formatDate }
+function rfc3339(date: Date) {
+  function pad(n: number) {
+    return `${n}`.padStart(2, '0')
+  }
+
+  function timezoneOffset(offset: number) {
+    if (offset === 0) {
+      return 'Z'
+    }
+
+    const sign = offset > 0 ? '-' : '+'
+    offset = Math.abs(offset)
+
+    return sign + pad(Math.floor(offset / 60)) + ':' + pad(offset % 60)
+  }
+
+  return (
+    date.toISOString().slice(0, -5) + 
+    timezoneOffset(date.getTimezoneOffset())
+  )
+}
+
+export { formatDate, rfc3339 }
