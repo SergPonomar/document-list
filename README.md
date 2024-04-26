@@ -10,7 +10,7 @@
 - линтер [ESLint](https://eslint.org/)
 
 #### Демо:
-- [Демо приложения](https://sergponomar.github.io/document-lint/).
+- [Демо приложения](https://sergponomar.github.io/document-list/).
 
 ##### Установка зависимостей
 
