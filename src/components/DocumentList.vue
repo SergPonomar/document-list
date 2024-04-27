@@ -168,6 +168,7 @@ const resetAnchor = () => {
 <style lang="scss">
 .document-list {
   line-height: 120%;
+  overflow-x: auto;
 
   &__table {
     border-collapse: collapse;
