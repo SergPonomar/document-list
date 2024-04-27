@@ -103,7 +103,7 @@ const useFetchNext = () => {
   return { fetchNext, attributes, loading, error, activeSort, resetAttributes }
 }
 
-const { fetchNext, attributes, activeSort } = useFetchNext()
+const { fetchNext, attributes, activeSort, loading } = useFetchNext()
 
 const resetKey = ref(1)
 const resetAnchor = () => {
@@ -162,6 +162,9 @@ const resetAnchor = () => {
       @fetch-next="fetchNext"
     />
   </div>
+  <p v-if="!loading && !attributes.length">
+    Ничего не найдено
+  </p>
   <FilterModal />
 </template>
 
@@ -169,6 +172,7 @@ const resetAnchor = () => {
 .document-list {
   line-height: 120%;
   overflow-x: auto;
+  margin-bottom: 20px;
 
   &__table {
     border-collapse: collapse;
