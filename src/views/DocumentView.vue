@@ -26,7 +26,10 @@ const id = getId()
     @error="error = $event"
     @get-name="documentName = $event"
   />
-  <p class="document-view__error">
+  <p
+    v-else
+    class="document-view__error"
+  >
     Документ с ID <strong>"{{ id }}"</strong> не найден
   </p>
 </template>
